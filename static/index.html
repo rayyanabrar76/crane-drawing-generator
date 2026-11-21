@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crane Drawing Generator</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Arial, sans-serif; background: #f4f5f7; color: #222; }
+  header { background: #1f2937; color: white; padding: 14px 20px; font-size: 18px; font-weight: bold; }
+  .layout { display: grid; grid-template-columns: 300px 1fr; gap: 16px; padding: 16px; }
+  .card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  h2 { font-size: 15px; margin: 0 0 12px; }
+  label { display: block; font-size: 13px; margin-top: 10px; }
+  label small { color: #666; }
+  input { width: 100%; padding: 7px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+  .buttons { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  button { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+  .primary { background: #1565c0; color: white; }
+  .secondary { background: #e5e7eb; }
+  .danger { background: #fee2e2; color: #b91c1c; }
+  #msg { margin-top: 12px; font-size: 13px; white-space: pre-line; }
+  .error { color: #b91c1c; }
+  .ok { color: #15803d; }
+  #editing { font-size: 12px; color: #666; margin-top: 8px; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 13px; gap: 6px; }
+  li span small { color: #666; display: block; }
+  #drawing { overflow: auto; min-height: 300px; }
+  #drawing svg { width: 100%; height: auto; }
+  .empty { color: #888; font-size: 13px; }
+  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>Crane Drawing Generator</header>
+<div class="layout">
+  <div>
+    <div class="card">
+      <h2>Crane inputs</h2>
+      <label>Design name
+        <input id="name" value="New crane">
+      </label>
+      <label>Load (t) <small>1 to 20</small>
+        <input id="capacity_t" type="number" step="0.5" value="10">
+      </label>
+      <label>Span (mm) <small>5000 to 30000</small>
+        <input id="span_mm" type="number" step="100" value="25000">
+      </label>
+      <label>Lifting height (mm) <small>3000 to 20000</small>
+        <input id="lifting_height_mm" type="number" step="100" value="7900">
+      </label>
+      <div class="buttons">
+        <button class="primary" onclick="preview()">Draw</button>
+        <button class="primary" onclick="save()">Save</button>
+        <button class="secondary" onclick="newDesign()">New</button>
+      </div>
+      <div id="editing"></div>
+      <div id="msg"></div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h2>Saved designs</h2>
+      <ul id="list"><li class="empty">Loading...</li></ul>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Drawing</h2>
+    <div id="drawing"><p class="empty">Click "Draw" to see the crane.</p></div>
+  </div>
+</div>
+
+<script>
+let currentId = null;  // id of the design being edited, or null for a new one
+
+function readInputs() {
+  // Send raw values. The server does the real checking.
+  return {
+    name: document.getElementById("name").value,
+    inputs: {
+      capacity_t: Number(document.getElementById("capacity_t").value),
+      span_mm: Number(document.getElementById("span_mm").value),
+      lifting_height_mm: Number(document.getElementById("lifting_height_mm").value),
+    },
+  };
+}
+
+function showMsg(text, isError) {
+  const el = document.getElementById("msg");
+  el.textContent = text;
+  el.className = isError ? "error" : "ok";
+}
+
+function setEditing(id, name) {
+  currentId = id;
+  document.getElementById("editing").textContent =
+    id ? `Editing saved design #${id}: ${name}` : "New design (not saved yet)";
+}
+
+async function errorText(res) {
+  // Turn the server's error into readable lines.
+  try {
+    const data = await res.json();
+    if (Array.isArray(data.detail)) {
+      return data.detail.map(e => `${e.loc[e.loc.length - 1]}: ${e.msg}`).join("\n");
+    }
+    return data.detail || `Error ${res.status}`;
+  } catch {
+    return `Error ${res.status}`;
+  }
+}
+
+async function preview() {
+  const res = await fetch("/api/preview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(readInputs().inputs),
+  });
+  if (!res.ok) return showMsg(await errorText(res), true);
+  document.getElementById("drawing").innerHTML = await res.text();
+  showMsg("", false);
+}
+
+async function save() {
+  const url = currentId ? `/api/designs/${currentId}` : "/api/designs";
+  const res = await fetch(url, {
+    method: currentId ? "PUT" : "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(readInputs()),
+  });
+  if (!res.ok) return showMsg(await errorText(res), true);
+  const saved = await res.json();
+  setEditing(saved.id, saved.name);
+  showMsg("Saved.", false);
+  await loadList();
+  await showSavedDrawing(saved.id);
+}
+
+async function showSavedDrawing(id) {
+  const res = await fetch(`/api/designs/${id}/drawing`);
+  if (res.ok) document.getElementById("drawing").innerHTML = await res.text();
+}
+
+async function openDesign(id) {
+  const res = await fetch(`/api/designs/${id}`);
+  if (!res.ok) return showMsg(await errorText(res), true);
+  const d = await res.json();
+  document.getElementById("name").value = d.name;
+  document.getElementById("capacity_t").value = d.inputs.capacity_t;
+  document.getElementById("span_mm").value = d.inputs.span_mm;
+  document.getElementById("lifting_height_mm").value = d.inputs.lifting_height_mm;
+  setEditing(d.id, d.name);
+  showMsg("", false);
+  await showSavedDrawing(d.id);
+}
+
+async function deleteDesign(id) {
+  if (!confirm("Delete this design?")) return;
+  const res = await fetch(`/api/designs/${id}`, { method: "DELETE" });
+  if (!res.ok) return showMsg(await errorText(res), true);
+  if (currentId === id) newDesign();
+  await loadList();
+}
+
+function newDesign() {
+  document.getElementById("name").value = "New crane";
+  setEditing(null);
+  showMsg("", false);
+  document.getElementById("drawing").innerHTML = '<p class="empty">Click "Draw" to see the crane.</p>';
+}
+
+async function loadList() {
+  const list = document.getElementById("list");
+  const res = await fetch("/api/designs");
+  if (!res.ok) { list.innerHTML = '<li class="error">Could not load designs.</li>'; return; }
+  const designs = await res.json();
+  if (designs.length === 0) { list.innerHTML = '<li class="empty">No saved designs yet.</li>'; return; }
+  list.innerHTML = "";
+  for (const d of designs) {
+    const li = document.createElement("li");
+    const info = document.createElement("span");
+    info.textContent = d.name;
+    const sub = document.createElement("small");
+    sub.textContent = `${d.inputs.capacity_t} t · span ${d.inputs.span_mm} · lift ${d.inputs.lifting_height_mm}`;
+    info.appendChild(sub);
+    const btns = document.createElement("span");
+    const openBtn = document.createElement("button");
+    openBtn.className = "secondary"; openBtn.textContent = "Open";
+    openBtn.onclick = () => openDesign(d.id);
+    const delBtn = document.createElement("button");
+    delBtn.className = "danger"; delBtn.textContent = "Delete";
+    delBtn.onclick = () => deleteDesign(d.id);
+    btns.append(openBtn, " ", delBtn);
+    li.append(info, btns);
+    list.appendChild(li);
+  }
+}
+
+setEditing(null);
+loadList();
+</script>
+</body>
+</html>

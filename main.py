@@ -1,6 +1,6 @@
 """API server for the crane drawing generator."""
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response
+from fastapi.responses import FileResponse, Response
 
 import database
 import drawing
@@ -12,6 +12,11 @@ app = FastAPI(title="Crane Drawing Generator")
 @app.on_event("startup")
 def startup():
     database.init_db()
+
+
+@app.get("/")
+def home():
+    return FileResponse("static/index.html")
 
 
 def _svg(content):
