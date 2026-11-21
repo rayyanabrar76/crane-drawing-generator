@@ -3,200 +3,877 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Crane Drawing Generator</title>
+<title>CraneDraft</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23FFC53D'/%3E%3Cstop offset='1' stop-color='%23F97316'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='40' height='40' rx='11' fill='url(%23g)'/%3E%3Cg fill='none' stroke='%231A1306' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 11h22M11 11v4M29 11v4M20 18v5M20 23v2.2a3.2 3.2 0 1 1-3.2 3.2'/%3E%3Crect x='16.5' y='13.5' width='7' height='4.5' rx='1.2' fill='%231A1306'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..750&family=JetBrains+Mono:wght@400..600&display=swap">
 <style>
+  :root {
+    --panel: #ffffff;
+    --panel-2: #f5f6f8;
+    --line: #e6e8ed;
+    --line-2: #d4d9e1;
+    --text: #0f1729;
+    --text-2: #4a5568;
+    --text-3: #8a94a6;
+    --accent: #2456e0;
+    --accent-2: #1d47c2;
+    --accent-soft: #eef3ff;
+    --accent-ring: rgba(36, 86, 224, .18);
+    --amber-text: #8a4f06;
+    --red: #d63a2f;
+    --red-soft: rgba(214, 58, 47, .1);
+    --canvas: #ebedf1;
+    --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", Consolas, monospace;
+    color-scheme: light;
+  }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: Arial, sans-serif; background: #f4f5f7; color: #222; }
-  header { background: #1f2937; color: white; padding: 14px 20px; font-size: 18px; font-weight: bold; }
-  .layout { display: grid; grid-template-columns: 300px 1fr; gap: 16px; padding: 16px; }
-  .card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
-  h2 { font-size: 15px; margin: 0 0 12px; }
-  label { display: block; font-size: 13px; margin-top: 10px; }
-  label small { color: #666; }
-  input { width: 100%; padding: 7px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-  .buttons { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
-  button { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
-  .primary { background: #1565c0; color: white; }
-  .secondary { background: #e5e7eb; }
-  .danger { background: #fee2e2; color: #b91c1c; }
-  #msg { margin-top: 12px; font-size: 13px; white-space: pre-line; }
-  .error { color: #b91c1c; }
-  .ok { color: #15803d; }
-  #editing { font-size: 12px; color: #666; margin-top: 8px; }
-  ul { list-style: none; padding: 0; margin: 0; }
-  li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 13px; gap: 6px; }
-  li span small { color: #666; display: block; }
-  #drawing { overflow: auto; min-height: 300px; }
-  #drawing svg { width: 100%; height: auto; }
-  .empty { color: #888; font-size: 13px; }
-  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--canvas); color: var(--text); font: 14px/1.45 var(--font); -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--accent-ring); }
+  button, input { font: inherit; color: inherit; }
+  .ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  .app { display: grid; grid-template-rows: 56px minmax(0, 1fr); height: 100vh; height: 100dvh; }
+
+  /* ---------- header ---------- */
+  .topbar {
+    position: relative; z-index: 20; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
+    padding: 0 14px 0 16px; color: #fff;
+    background: linear-gradient(90deg, #1e3a8a 0%, #2456e0 55%, #0ea5e9 100%);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .brand svg { width: 32px; height: 32px; flex: none; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .18)); }
+  .brand-name { font-weight: 750; font-size: 17px; letter-spacing: -.02em; }
+  .brand-name span { color: #ffd166; }
+  .doc { display: flex; align-items: center; gap: 10px; min-width: 0; max-width: 46vw; }
+  .doc h1 { margin: 0; font-size: 14.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; flex: none; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+  .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .badge.draft { background: rgba(255, 255, 255, .16); color: #fff; }
+  .badge.saved { background: rgba(74, 222, 128, .2); color: #c6f6d5; }
+  .badge.dirty { background: rgba(251, 191, 36, .24); color: #fde68a; }
+  .top-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 14px;
+    border-radius: 10px; border: 1px solid transparent; font-weight: 600; font-size: 13.5px; cursor: pointer; white-space: nowrap;
+    text-decoration: none; transition: background .15s, border-color .15s, color .15s, transform .06s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(255, 255, 255, .35); }
+  .btn:disabled { opacity: .5; cursor: default; transform: none; }
+  .btn-ghost { background: rgba(255, 255, 255, .12); border-color: rgba(255, 255, 255, .2); color: #fff; }
+  .btn-ghost:hover:not(:disabled) { background: rgba(255, 255, 255, .2); }
+  .btn-light { background: #fff; color: var(--accent-2); box-shadow: 0 2px 8px -2px rgba(0, 0, 0, .25); }
+  .btn-light:hover:not(:disabled) { background: #eef3ff; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-2); }
+  .btn-primary:focus-visible { box-shadow: 0 0 0 4px var(--accent-ring); }
+  .btn-sm { height: 34px; padding: 0 12px; font-size: 13px; border-radius: 9px; }
+
+  /* ---------- body: rail | panel | stage ---------- */
+  .body { position: relative; display: grid; grid-template-columns: 72px auto minmax(0, 1fr); min-height: 0; }
+
+  .rail { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; background: var(--panel); border-right: 1px solid var(--line); z-index: 12; }
+  .rail-item {
+    position: relative; width: 64px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0 7px;
+    border: 0; border-radius: 10px; background: transparent; color: var(--text-2); font-size: 11px; font-weight: 550; cursor: pointer; text-decoration: none;
+  }
+  .rail-icon { width: 40px; height: 32px; display: grid; place-items: center; border-radius: 9px; transition: background .15s, color .15s; }
+  .rail-icon .ic { width: 21px; height: 21px; }
+  .rail-item:hover .rail-icon { background: var(--panel-2); color: var(--text); }
+  .rail-item.active { color: var(--accent); }
+  .rail-item.active .rail-icon { background: var(--accent-soft); color: var(--accent); }
+  .rail-item:focus-visible { outline: none; }
+  .rail-item:focus-visible .rail-icon { box-shadow: 0 0 0 3px var(--accent-ring); }
+  .rail-badge { position: absolute; top: 2px; right: 8px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 10.5px; font-weight: 700; line-height: 18px; text-align: center; }
+
+  .panel { width: 300px; overflow: hidden; background: var(--panel); border-right: 1px solid var(--line); transition: width .2s ease; z-index: 11; }
+  .panel.closed { width: 0; border-right-width: 0; }
+  .panel-inner { width: 300px; height: 100%; overflow: auto; padding: 20px 20px 24px; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+  .panel-title { display: flex; align-items: center; justify-content: space-between; margin: 0 0 18px; font-size: 16px; font-weight: 680; letter-spacing: -.01em; }
+  .muted { color: var(--text-3); font-size: 12.5px; }
+
+  /* fields */
+  .field { margin-bottom: 20px; }
+  .field-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .field-head label { font-weight: 560; font-size: 13px; }
+  .hint { font: 500 11.5px var(--mono); color: var(--text-3); }
+  .text-input, .num { height: 38px; border: 1px solid var(--line-2); border-radius: 9px; background: var(--panel); transition: border-color .15s, box-shadow .15s, background .15s; }
+  .text-input { width: 100%; padding: 0 12px; }
+  .text-input::placeholder { color: var(--text-3); }
+  .text-input:focus, .num:focus-within { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-ring); }
+  .field-row { display: grid; grid-template-columns: 1fr 112px; gap: 12px; align-items: center; }
+  .num { display: flex; align-items: center; padding: 0 10px 0 12px; }
+  .num input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; outline: 0; background: transparent; font: 500 13.5px var(--mono); appearance: textfield; -moz-appearance: textfield; }
+  .num input::-webkit-inner-spin-button, .num input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .unit { margin-left: 6px; font: 500 12px var(--mono); color: var(--text-3); }
+  .field-error { display: none; align-items: flex-start; gap: 6px; margin: 8px 0 0; color: var(--red); font-size: 12.5px; }
+  .field-error .ic { width: 14px; height: 14px; margin-top: 2px; }
+  .field.invalid .field-error { display: flex; }
+  .field.invalid .text-input, .field.invalid .num { border-color: var(--red); box-shadow: 0 0 0 4px var(--red-soft); }
+  .divider { height: 1px; margin: 4px 0 20px; background: var(--line); }
+
+  input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; margin: 0; background: transparent; cursor: pointer; }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; background: linear-gradient(to right, var(--accent) var(--p, 50%), var(--line-2) var(--p, 50%)); }
+  input[type=range]::-moz-range-track { height: 4px; border-radius: 4px; background: linear-gradient(to right, var(--accent) var(--p, 50%), var(--line-2) var(--p, 50%)); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -7px; border-radius: 50%; background: #fff; border: 2px solid var(--accent); box-shadow: 0 1px 3px rgba(15, 23, 41, .25); transition: transform .12s; }
+  input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2px solid var(--accent); box-shadow: 0 1px 3px rgba(15, 23, 41, .25); }
+  input[type=range]:active::-webkit-slider-thumb { transform: scale(1.15); }
+  input[type=range]:focus { outline: none; }
+  input[type=range]:disabled { opacity: .4; cursor: default; }
+
+  /* saved list */
+  .search { position: relative; margin-bottom: 12px; }
+  .search .ic { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-3); pointer-events: none; }
+  .search .text-input { height: 36px; padding-left: 34px; font-size: 13px; background: var(--panel-2); border-color: transparent; }
+  .search .text-input:focus { background: var(--panel); border-color: var(--accent); }
+  .list { list-style: none; margin: 0 -8px; padding: 0; }
+  .item { position: relative; display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 10px; cursor: pointer; transition: background .12s; }
+  .item:hover { background: var(--panel-2); }
+  .item:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-ring); }
+  .item.active { background: var(--accent-soft); }
+  .thumb { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--line); color: var(--text-2); font: 600 11px var(--mono); }
+  .item.active .thumb { background: #fff; border-color: transparent; color: var(--accent); }
+  .item-body { flex: 1; min-width: 0; }
+  .item-name { font-weight: 580; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-meta { margin-top: 2px; font: 11.5px var(--mono); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .icon-btn { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; border: 0; background: transparent; color: var(--text-2); cursor: pointer; }
+  .icon-btn:hover { background: var(--panel-2); color: var(--text); }
+  .icon-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-ring); }
+  .del { opacity: 0; }
+  .del:hover { color: var(--red); background: var(--red-soft); }
+  .del.confirm { opacity: 1; width: auto; padding: 0 10px; background: var(--red); color: #fff; font-size: 12px; font-weight: 600; }
+  .item:hover .del, .item:focus-within .del { opacity: 1; }
+  @media (hover: none) { .del { opacity: 1; } }
+  .empty { padding: 30px 8px; text-align: center; }
+  .empty-icon { width: 44px; height: 44px; margin: 0 auto 12px; display: grid; place-items: center; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line); color: var(--text-3); }
+  .empty-title { font-weight: 650; font-size: 14px; }
+  .empty-text { margin-top: 4px; font-size: 12.5px; color: var(--text-3); }
+
+  /* guide */
+  .guide-step { display: flex; gap: 12px; margin-bottom: 14px; }
+  .guide-step b { width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; }
+  .guide-step p, .guide-text { margin: 2px 0 0; color: var(--text-2); font-size: 13px; line-height: 1.55; }
+  .guide-h { margin: 22px 0 10px; font-size: 13px; font-weight: 650; }
+  .guide-text strong { color: var(--text); }
+
+  /* ---------- stage ---------- */
+  .stage { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--canvas); }
+  .panel-toggle {
+    position: absolute; left: 0; top: 50%; z-index: 5; transform: translateY(-50%);
+    width: 16px; height: 60px; display: grid; place-items: center; padding: 0;
+    border: 1px solid var(--line); border-left: 0; border-radius: 0 10px 10px 0;
+    background: var(--panel); color: var(--text-2); cursor: pointer; box-shadow: 2px 0 8px -3px rgba(15, 23, 41, .18);
+  }
+  .panel-toggle:hover { color: var(--text); }
+  .panel-toggle .ic { width: 13px; height: 13px; transition: transform .2s; }
+  .panel-toggle.flipped .ic { transform: rotate(180deg); }
+  .canvas-wrap { position: relative; flex: 1; display: flex; min-height: 0; }
+  .canvas { flex: 1; min-width: 0; overflow: auto; display: flex; padding: 24px 32px; user-select: none; scrollbar-width: thin; scrollbar-color: #c9ced8 transparent; }
+  .canvas.pannable { cursor: grab; }
+  .canvas.panning { cursor: grabbing; }
+  .sheet { margin: auto; flex: none; aspect-ratio: 1400 / 1000; background: #fff; box-shadow: 0 1px 3px rgba(15, 23, 41, .08), 0 12px 32px -12px rgba(15, 23, 41, .22); transition: opacity .2s, filter .2s; }
+  .sheet svg { display: block; width: 100%; height: auto; }
+  .sheet.stale { opacity: .45; filter: grayscale(.7); }
+  .canvas-empty { margin: auto; max-width: 300px; text-align: center; cursor: default; }
+  .canvas-empty .empty-icon { width: 60px; height: 60px; border-radius: 18px; background: #fff; border: 0; color: var(--text-2); box-shadow: 0 6px 18px -8px rgba(15, 23, 41, .25); }
+  .canvas-empty .empty-icon .ic { width: 28px; height: 28px; }
+  .canvas-empty .empty-title { font-size: 16px; }
+  .canvas-empty .btn { margin-top: 16px; }
+  .progress { position: absolute; z-index: 2; inset: 0 0 auto 0; height: 2px; overflow: hidden; opacity: 0; transition: opacity .2s; }
+  .progress.on { opacity: 1; transition-delay: .15s; }
+  .progress::after { content: ""; position: absolute; top: 0; left: -35%; width: 35%; height: 100%; background: var(--accent); border-radius: 2px; animation: slide 1s ease-in-out infinite; }
+  @keyframes slide { to { left: 100%; } }
+  .banner {
+    position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px;
+    padding: 9px 15px; border-radius: 999px; white-space: nowrap; background: #fff; color: var(--red); font-size: 13px; font-weight: 560;
+    box-shadow: 0 10px 28px -8px rgba(15, 23, 41, .3); animation: rise .25s cubic-bezier(.2, .9, .3, 1.15);
+  }
+
+  /* bottom bar */
+  .bottombar { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 44px; padding: 0 12px 0 16px; background: var(--panel); border-top: 1px solid var(--line); }
+  .result { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-size: 12.5px; color: var(--text-2); white-space: nowrap; overflow: hidden; }
+  .result .ic { color: var(--text-3); }
+  .result b { color: var(--text); font-weight: 650; font-variant-numeric: tabular-nums; }
+  .est { padding: 1px 6px; border-radius: 5px; background: #fff4de; color: var(--amber-text); font-size: 10.5px; font-weight: 650; }
+  .zoom { display: flex; align-items: center; gap: 10px; flex: none; }
+  .zoom input[type=range] { width: 140px; }
+  .zoom-val { min-width: 42px; text-align: right; font-size: 12.5px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .zoom .icon-btn { width: 32px; height: 32px; }
+  .zoom .icon-btn:disabled { opacity: .35; cursor: default; background: transparent; }
+
+  /* toasts */
+  .toasts { position: fixed; right: 20px; bottom: 60px; z-index: 50; pointer-events: none; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .toast { pointer-events: auto; display: flex; align-items: flex-start; gap: 10px; max-width: 380px; padding: 11px 15px 11px 12px; border-radius: 12px; background: #111827; color: #f5f7fa; font-size: 13px; font-weight: 500; white-space: pre-line; box-shadow: 0 14px 34px -8px rgba(0, 0, 0, .42); animation: rise .25s cubic-bezier(.2, .9, .3, 1.15); }
+  .toast .ic { margin-top: 1px; color: #4ade80; }
+  .toast.error .ic { color: #ff8a80; }
+  .toast.out { animation: fade-out .18s ease-in forwards; }
+  @keyframes rise { from { opacity: 0; translate: 0 8px; scale: .98; } }
+  @keyframes fade-out { to { opacity: 0; translate: 0 4px; } }
+
+  /* small screens: the panel floats over the canvas */
+  @media (max-width: 760px) {
+    .topbar { grid-template-columns: auto minmax(0, 1fr) auto; padding: 0 10px; }
+    .brand-name, .btn-label { display: none; }
+    .top-actions .btn { width: 38px; padding: 0; }
+    .body { grid-template-columns: 64px minmax(0, 1fr); }
+    .rail-item { width: 58px; }
+    .panel { position: absolute; left: 64px; top: 0; bottom: 0; box-shadow: 12px 0 30px -12px rgba(15, 23, 41, .3); }
+    .panel-inner { width: min(300px, calc(100vw - 64px)); }
+    .panel-toggle { display: none; }
+    .canvas { padding: 14px; }
+    .result-label, .zoom input[type=range] { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  }
 </style>
 </head>
 <body>
-<header>Crane Drawing Generator</header>
-<div class="layout">
-  <div>
-    <div class="card">
-      <h2>Crane inputs</h2>
-      <label>Design name
-        <input id="name" value="New crane">
-      </label>
-      <label>Load (t) <small>1 to 20</small>
-        <input id="capacity_t" type="number" step="0.5" value="10">
-      </label>
-      <label>Span (mm) <small>5000 to 30000</small>
-        <input id="span_mm" type="number" step="100" value="25000">
-      </label>
-      <label>Lifting height (mm) <small>3000 to 20000</small>
-        <input id="lifting_height_mm" type="number" step="100" value="7900">
-      </label>
-      <div class="buttons">
-        <button class="primary" onclick="preview()">Draw</button>
-        <button class="primary" onclick="save()">Save</button>
-        <button class="secondary" onclick="newDesign()">New</button>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="1" stop-color="#F97316"/></linearGradient>
+  </defs>
+  <symbol id="logo" viewBox="0 0 40 40">
+    <rect width="40" height="40" rx="11" fill="url(#logoGrad)"/>
+    <g fill="none" stroke="#1A1306" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 11h22M11 11v4M29 11v4M20 18v5M20 23v2.2a3.2 3.2 0 1 1-3.2 3.2"/>
+      <rect x="16.5" y="13.5" width="7" height="4.5" rx="1.2" fill="#1A1306"/>
+    </g>
+  </symbol>
+  <symbol id="i-crane" viewBox="0 0 24 24"><path d="M3 5h18M5 5v3M19 5v3"/><rect x="9.5" y="7" width="5" height="3.5" rx=".8"/><path d="M12 10.5V15M12 15a2.2 2.2 0 1 1-2.2 2.2"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
+  <symbol id="i-fit" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5M12 16.3h.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-building" viewBox="0 0 24 24"><path d="M3 21h18M5 21V9l7-5 7 5v12"/><path d="M9.5 21v-6h5v6"/></symbol>
+</svg>
+
+<div class="app">
+  <!-- ================= header ================= -->
+  <header class="topbar">
+    <div class="brand">
+      <svg aria-hidden="true"><use href="#logo"/></svg>
+      <span class="brand-name">Crane<span>Draft</span></span>
+    </div>
+    <div class="doc">
+      <h1 id="pageTitle">New crane</h1>
+      <span class="badge draft" id="badge">Draft</span>
+    </div>
+    <div class="top-actions">
+      <button class="btn btn-ghost" id="newBtn" type="button" title="Start a new design"><svg class="ic"><use href="#i-plus"/></svg><span class="btn-label">New</span></button>
+      <button class="btn btn-ghost" id="downloadBtn" type="button" title="Download the drawing as SVG"><svg class="ic"><use href="#i-download"/></svg><span class="btn-label">SVG</span></button>
+      <button class="btn btn-light" id="saveBtn" type="button" title="Save (Ctrl+S)"><svg class="ic"><use href="#i-save"/></svg><span class="btn-label" id="saveLabel">Save</span></button>
+    </div>
+  </header>
+
+  <div class="body">
+    <!-- ================= icon rail ================= -->
+    <nav class="rail" aria-label="Panels">
+      <button class="rail-item" type="button" data-panel="design"><span class="rail-icon"><svg class="ic"><use href="#i-sliders"/></svg></span>Design</button>
+      <button class="rail-item" type="button" data-panel="saved"><span class="rail-icon"><svg class="ic"><use href="#i-folder"/></svg></span>Saved<span class="rail-badge" id="navCount" hidden></span></button>
+      <button class="rail-item" type="button" data-panel="guide"><span class="rail-icon"><svg class="ic"><use href="#i-book"/></svg></span>Guide</button>
+      <a class="rail-item" href="/docs" target="_blank" rel="noopener" title="API docs (opens in a new tab)"><span class="rail-icon"><svg class="ic"><use href="#i-code"/></svg></span>API</a>
+    </nav>
+
+    <!-- ================= side panel ================= -->
+    <aside class="panel" id="panel">
+      <div class="panel-inner">
+        <!-- Design -->
+        <form id="panel-design" novalidate autocomplete="off">
+          <h2 class="panel-title">Design</h2>
+          <div class="field">
+            <div class="field-head"><label for="name">Name</label></div>
+            <input class="text-input" id="name" value="New crane" maxlength="100" spellcheck="false">
+            <p class="field-error"><svg class="ic"><use href="#i-alert"/></svg><span></span></p>
+          </div>
+          <div class="divider"></div>
+          <div class="field">
+            <div class="field-head"><label for="capacity_t">Load</label><span class="hint">1 – 20 t</span></div>
+            <div class="field-row">
+              <input type="range" id="capacity_t_range" min="1" max="20" step="0.5" value="10" tabindex="-1" aria-hidden="true">
+              <div class="num"><input id="capacity_t" type="number" step="0.5" value="10" inputmode="decimal"><span class="unit">t</span></div>
+            </div>
+            <p class="field-error"><svg class="ic"><use href="#i-alert"/></svg><span></span></p>
+          </div>
+          <div class="field">
+            <div class="field-head"><label for="span_mm">Span</label><span class="hint">5,000 – 30,000 mm</span></div>
+            <div class="field-row">
+              <input type="range" id="span_mm_range" min="5000" max="30000" step="100" value="25000" tabindex="-1" aria-hidden="true">
+              <div class="num"><input id="span_mm" type="number" step="100" value="25000" inputmode="numeric"><span class="unit">mm</span></div>
+            </div>
+            <p class="field-error"><svg class="ic"><use href="#i-alert"/></svg><span></span></p>
+          </div>
+          <div class="field">
+            <div class="field-head"><label for="lifting_height_mm">Lifting height</label><span class="hint">3,000 – 20,000 mm</span></div>
+            <div class="field-row">
+              <input type="range" id="lifting_height_mm_range" min="3000" max="20000" step="100" value="7900" tabindex="-1" aria-hidden="true">
+              <div class="num"><input id="lifting_height_mm" type="number" step="100" value="7900" inputmode="numeric"><span class="unit">mm</span></div>
+            </div>
+            <p class="field-error"><svg class="ic"><use href="#i-alert"/></svg><span></span></p>
+          </div>
+          <p class="muted">Other sizes are estimates from one reference drawing.</p>
+        </form>
+
+        <!-- Saved -->
+        <section id="panel-saved" hidden>
+          <h2 class="panel-title">Saved designs</h2>
+          <div class="search">
+            <svg class="ic"><use href="#i-search"/></svg>
+            <input class="text-input" id="search" type="search" placeholder="Search" aria-label="Search designs" autocomplete="off">
+          </div>
+          <ul class="list" id="list"></ul>
+        </section>
+
+        <!-- Guide -->
+        <section id="panel-guide" hidden>
+          <h2 class="panel-title">Guide</h2>
+          <div class="guide-step"><b>1</b><p>Set the <strong>load</strong>, <strong>span</strong> and <strong>lifting height</strong> in Design.</p></div>
+          <div class="guide-step"><b>2</b><p>The drawing updates by itself.</p></div>
+          <div class="guide-step"><b>3</b><p><strong>Save</strong> it, or download it as <strong>SVG</strong>.</p></div>
+          <h3 class="guide-h">Reading the drawing</h3>
+          <p class="guide-text"><strong>Front view:</strong> the crane seen from the front.<br><strong>Plan view:</strong> the crane seen from above.<br><strong>Blue lines:</strong> sizes in mm.</p>
+          <h3 class="guide-h">Estimates</h3>
+          <p class="guide-text">Only the three inputs are yours. Other sizes come from one reference drawing (10 t, 25 m) and are marked <strong>(est.)</strong>.</p>
+        </section>
       </div>
-      <div id="editing"></div>
-      <div id="msg"></div>
-    </div>
-    <div class="card" style="margin-top:16px">
-      <h2>Saved designs</h2>
-      <ul id="list"><li class="empty">Loading...</li></ul>
-    </div>
-  </div>
-  <div class="card">
-    <h2>Drawing</h2>
-    <div id="drawing"><p class="empty">Click "Draw" to see the crane.</p></div>
+    </aside>
+
+    <!-- ================= canvas ================= -->
+    <main class="stage">
+      <button class="panel-toggle" id="panelToggle" type="button" aria-label="Hide panel" title="Hide panel"><svg class="ic"><use href="#i-chevron"/></svg></button>
+      <div class="canvas-wrap">
+        <div class="progress" id="progress"></div>
+        <div class="canvas" id="canvas" title="Drag to move · Ctrl + scroll to zoom">
+          <div class="canvas-empty" id="canvasEmpty">
+            <div class="empty-icon"><svg class="ic"><use href="#i-crane"/></svg></div>
+            <div class="empty-title">No drawing yet</div>
+            <div class="empty-text">Move a slider, or click Draw.</div>
+            <button class="btn btn-primary btn-sm" id="emptyDrawBtn" type="button"><svg class="ic"><use href="#i-pencil"/></svg>Draw</button>
+          </div>
+          <div class="sheet" id="sheet" hidden></div>
+        </div>
+        <div class="banner" id="banner" hidden><svg class="ic"><use href="#i-alert"/></svg>Drawing not updated. Fix the highlighted inputs.</div>
+      </div>
+      <div class="bottombar">
+        <div class="result" title="Lowest roof allowed for this crane">
+          <svg class="ic"><use href="#i-building"/></svg><span class="result-label">Min. building height</span><b id="kBuild">–</b> mm <span class="est">est.</span>
+        </div>
+        <div class="zoom" id="zoomBox">
+          <input type="range" id="zoomRange" min="10" max="300" step="1" value="50" aria-label="Zoom">
+          <span class="zoom-val" id="zoomVal">–</span>
+          <button class="icon-btn" id="fitBtn" type="button" aria-label="Fit to screen" title="Fit to screen"><svg class="ic"><use href="#i-fit"/></svg></button>
+          <button class="icon-btn" id="fullBtn" type="button" aria-label="Full screen" title="Full screen"><svg class="ic"><use href="#i-expand"/></svg></button>
+        </div>
+      </div>
+    </main>
   </div>
 </div>
 
-<script>
-let currentId = null;  // id of the design being edited, or null for a new one
+<div class="toasts" id="toasts" aria-live="polite"></div>
 
+<script>
+const $ = (id) => document.getElementById(id);
+const FIELDS = ["capacity_t", "span_mm", "lifting_height_mm"];
+const DEFAULTS = { name: "New crane", inputs: { capacity_t: 10, span_mm: 25000, lifting_height_mm: 7900 } };
+const SHEET_W = 1400, SHEET_H = 1000;  // size of the SVG the server draws
+const JSON_HEADERS = { "Content-Type": "application/json" };
+const PANELS = ["design", "saved", "guide"];
+const STORE_KEY = "cranedraft:v1";  // browser memory, so a page refresh keeps your work
+
+const state = {
+  id: null,      // id of the saved design being edited, or null for a new one
+  saved: null,   // form snapshot at the last open/save, to spot unsaved changes
+  svg: "",       // the drawing on screen
+  zoom: null,    // null = fit to screen
+  scale: 1,
+  seq: 0,        // drops drawing responses that arrive out of order
+  panel: "design",
+  panelOpen: true,
+};
+let designs = [];
+let drawTimer;
+let kpiSeq = 0;
+
+const fmt = (n) => Number(n).toLocaleString("en-US");
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+const icon = (name) => `<svg class="ic"><use href="#i-${name}"/></svg>`;
+
+// ---------- remember work across page refresh ----------
+function persist() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      ...readInputs(), id: state.id, drawn: !!state.svg, panel: state.panel, panelOpen: state.panelOpen,
+    }));
+  } catch {}  // private mode or storage blocked: the app still works, it just won't remember
+}
+function loadStored() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || null; } catch { return null; }
+}
+
+async function restore(s) {
+  if (!s) return;
+  if (s.inputs) setForm(typeof s.name === "string" ? s.name : DEFAULTS.name, { ...DEFAULTS.inputs, ...s.inputs });
+  if (PANELS.includes(s.panel) && window.innerWidth > 760) showPanel(s.panel, s.panelOpen !== false);
+  if (s.id) {
+    // Re-attach to the saved design, if it still exists.
+    try {
+      const res = await fetch(`/api/designs/${s.id}`);
+      if (res.ok) {
+        const d = await res.json();
+        state.id = d.id;
+        state.saved = JSON.stringify({ name: d.name, inputs: Object.fromEntries(FIELDS.map((f) => [f, Number(d.inputs[f])])) });
+      }
+    } catch {}
+  }
+  updateStatus();
+  if (s.drawn) await redraw();
+}
+
+// ---------- panels ----------
+function showPanel(name, open = true) {
+  state.panel = name;
+  state.panelOpen = open;
+  for (const p of PANELS) $("panel-" + p).hidden = p !== name;
+  $("panel").classList.toggle("closed", !open);
+  document.querySelectorAll(".rail-item[data-panel]").forEach((b) => b.classList.toggle("active", open && b.dataset.panel === name));
+  const t = $("panelToggle");
+  t.classList.toggle("flipped", !open);
+  t.title = open ? "Hide panel" : "Show panel";
+  t.setAttribute("aria-label", t.title);
+  persist();
+}
+function onRail(name) {
+  // Click the open panel's icon again to close it, like Canva.
+  if (state.panelOpen && state.panel === name) showPanel(name, false);
+  else showPanel(name, true);
+}
+
+// ---------- form ----------
 function readInputs() {
   // Send raw values. The server does the real checking.
   return {
-    name: document.getElementById("name").value,
-    inputs: {
-      capacity_t: Number(document.getElementById("capacity_t").value),
-      span_mm: Number(document.getElementById("span_mm").value),
-      lifting_height_mm: Number(document.getElementById("lifting_height_mm").value),
-    },
+    name: $("name").value,
+    inputs: Object.fromEntries(FIELDS.map((f) => [f, Number($(f).value)])),
   };
 }
+const snapshot = () => JSON.stringify(readInputs());
 
-function showMsg(text, isError) {
-  const el = document.getElementById("msg");
-  el.textContent = text;
-  el.className = isError ? "error" : "ok";
+function setForm(name, inputs) {
+  $("name").value = name;
+  for (const f of FIELDS) { $(f).value = inputs[f]; syncRange(f); }
 }
 
-function setEditing(id, name) {
-  currentId = id;
-  document.getElementById("editing").textContent =
-    id ? `Editing saved design #${id}: ${name}` : "New design (not saved yet)";
+function paintRange(range) {
+  range.style.setProperty("--p", ((range.value - range.min) / (range.max - range.min)) * 100 + "%");
+}
+function syncRange(f) {
+  const range = $(f + "_range");
+  if ($(f).value !== "") range.value = $(f).value;
+  paintRange(range);
 }
 
-async function errorText(res) {
-  // Turn the server's error into readable lines.
-  try {
-    const data = await res.json();
-    if (Array.isArray(data.detail)) {
-      return data.detail.map(e => `${e.loc[e.loc.length - 1]}: ${e.msg}`).join("\n");
+function updateStatus() {
+  $("pageTitle").textContent = $("name").value.trim() || "Untitled";
+  const b = $("badge");
+  if (!state.id) { b.className = "badge draft"; b.textContent = "Draft"; }
+  else if (snapshot() !== state.saved) { b.className = "badge dirty"; b.textContent = "Unsaved changes"; }
+  else { b.className = "badge saved"; b.textContent = "Saved"; }
+  $("saveLabel").textContent = state.id ? "Save changes" : "Save";
+  persist();
+}
+
+// ---------- errors & toasts ----------
+function setFieldError(key, msg) {
+  const field = $(key).closest(".field");
+  field.classList.add("invalid");
+  field.querySelector(".field-error span").textContent = msg;
+}
+function clearErrors(keys = ["name", ...FIELDS]) {
+  for (const k of keys) $(k).closest(".field").classList.remove("invalid");
+}
+
+async function showServerErrors(res) {
+  // 422: put each message under its field. Anything else becomes a toast.
+  let data = null;
+  try { data = await res.json(); } catch {}
+  const detail = data && data.detail;
+  if (Array.isArray(detail)) {
+    const other = [];
+    let fieldErrors = false;
+    for (const e of detail) {
+      const key = e.loc[e.loc.length - 1];
+      if (typeof key === "string" && $(key) && $(key).closest(".field")) { setFieldError(key, e.msg); fieldErrors = true; }
+      else other.push(e.msg);
     }
-    return data.detail || `Error ${res.status}`;
-  } catch {
-    return `Error ${res.status}`;
+    if (fieldErrors) showPanel("design");
+    if (other.length) toast(other.join("\n"), "error");
+  } else {
+    toast(detail || `Error ${res.status}`, "error");
   }
 }
 
-async function preview() {
-  const res = await fetch("/api/preview", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(readInputs().inputs),
-  });
-  if (!res.ok) return showMsg(await errorText(res), true);
-  document.getElementById("drawing").innerHTML = await res.text();
-  showMsg("", false);
+function toast(msg, type = "success") {
+  const t = el("div", "toast " + type);
+  t.innerHTML = icon(type === "error" ? "alert" : "check");
+  t.append(el("span", "", msg));
+  $("toasts").append(t);
+  setTimeout(() => t.classList.add("out"), 3400);
+  setTimeout(() => t.remove(), 3650);
+}
+const offline = () => toast("Can't reach the server. Is it running?", "error");
+
+// ---------- drawing ----------
+const setBusy = (on) => $("progress").classList.toggle("on", on);
+function setStale(on) {
+  $("sheet").classList.toggle("stale", on);
+  $("banner").hidden = !on;
 }
 
+function setEmpty(on) {
+  // Empty = no drawing yet: show the "click Draw" message instead of the sheet.
+  if (on) {
+    state.seq++;  // ignore any drawing still on its way
+    state.svg = "";
+    $("sheet").innerHTML = "";
+    setStale(false);
+    setBusy(false);
+  }
+  $("canvasEmpty").hidden = !on;
+  $("sheet").hidden = on;
+  $("zoomBox").style.visibility = on ? "hidden" : "";  // nothing to zoom yet
+  if (!on) applyZoom();
+  persist();
+}
+
+async function draw(url, options) {
+  const seq = ++state.seq;
+  setBusy(true);
+  try {
+    const res = await fetch(url, options);
+    if (seq !== state.seq) return;
+    if (!res.ok) {
+      clearErrors(FIELDS);
+      await showServerErrors(res);
+      if (state.svg) setStale(true);
+      return;
+    }
+    const svg = await res.text();
+    if (seq !== state.seq) return;
+    clearErrors(FIELDS);
+    state.svg = svg;
+    $("sheet").innerHTML = svg;
+    setStale(false);
+    setEmpty(false);
+  } catch {
+    if (seq === state.seq) offline();
+  } finally {
+    if (seq === state.seq) setBusy(false);
+  }
+}
+const preview = () => draw("/api/preview", { method: "POST", headers: JSON_HEADERS, body: JSON.stringify(readInputs().inputs) });
+const showSaved = (id) => draw(`/api/designs/${id}/drawing`);
+
+function redraw() {
+  clearTimeout(drawTimer);
+  // Saved design with no changes? Show the saved drawing (with its name).
+  if (state.id && snapshot() === state.saved) return showSaved(state.id);
+  return preview();
+}
+
+function onParamChange() {
+  updateStatus();
+  clearTimeout(drawTimer);
+  drawTimer = setTimeout(() => { redraw(); updateResult(); }, 120);  // redraw as you type or slide
+}
+
+async function updateResult() {
+  // The key answer for the bottom bar: how tall the building must be.
+  const seq = ++kpiSeq;
+  let d = null;
+  try {
+    const res = await fetch("/api/dimensions", { method: "POST", headers: JSON_HEADERS, body: JSON.stringify(readInputs().inputs) });
+    if (res.ok) d = await res.json();
+  } catch {}
+  if (seq === kpiSeq) $("kBuild").textContent = d ? fmt(d.min_building_height) : "–";
+}
+
+// ---------- zoom & pan ----------
+function applyZoom() {
+  if (!state.svg) return;
+  const c = $("canvas"), cs = getComputedStyle(c);
+  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  const fit = Math.min((c.clientWidth - padX) / SHEET_W, (c.clientHeight - padY) / SHEET_H);
+  state.scale = state.zoom ?? Math.max(0.1, fit);
+  $("sheet").style.width = Math.round(SHEET_W * state.scale) + "px";
+  const pct = Math.round(state.scale * 100);
+  $("zoomVal").textContent = pct + "%";
+  $("zoomRange").value = pct;
+  paintRange($("zoomRange"));
+  c.classList.toggle("pannable", c.scrollWidth > c.clientWidth + 1 || c.scrollHeight > c.clientHeight + 1);
+}
+
+function zoomTo(scale) {
+  // Keep the point in the middle of the view in the middle.
+  const c = $("canvas");
+  const cx = (c.scrollLeft + c.clientWidth / 2) / c.scrollWidth;
+  const cy = (c.scrollTop + c.clientHeight / 2) / c.scrollHeight;
+  state.zoom = Math.min(3, Math.max(0.1, scale));
+  applyZoom();
+  c.scrollLeft = cx * c.scrollWidth - c.clientWidth / 2;
+  c.scrollTop = cy * c.scrollHeight - c.clientHeight / 2;
+}
+
+function setupPan() {
+  const c = $("canvas");
+  let pan = null;
+  c.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "mouse" || e.button !== 0 || !c.classList.contains("pannable")) return;
+    const r = c.getBoundingClientRect();
+    if (e.clientX - r.left > c.clientLeft + c.clientWidth || e.clientY - r.top > c.clientTop + c.clientHeight) return;  // scrollbar
+    pan = { x: e.clientX, y: e.clientY, l: c.scrollLeft, t: c.scrollTop };
+    c.setPointerCapture(e.pointerId);
+    c.classList.add("panning");
+  });
+  c.addEventListener("pointermove", (e) => {
+    if (!pan) return;
+    c.scrollLeft = pan.l - (e.clientX - pan.x);
+    c.scrollTop = pan.t - (e.clientY - pan.y);
+  });
+  const end = () => { pan = null; c.classList.remove("panning"); };
+  c.addEventListener("pointerup", end);
+  c.addEventListener("pointercancel", end);
+  c.addEventListener("wheel", (e) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    if (state.svg) zoomTo(state.scale * (e.deltaY < 0 ? 1.1 : 1 / 1.1));
+  }, { passive: false });
+  new ResizeObserver(() => { if (state.zoom === null) applyZoom(); }).observe(c);
+}
+
+function toggleFullscreen() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen?.();
+}
+
+async function downloadSvg() {
+  if (!state.svg) await redraw();  // nothing drawn yet: draw it first
+  if (!state.svg) return;          // the inputs had errors
+  const base = ($("name").value.trim() || "crane").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-") || "crane";
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([state.svg], { type: "image/svg+xml" }));
+  a.download = base + ".svg";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// ---------- designs ----------
 async function save() {
-  const url = currentId ? `/api/designs/${currentId}` : "/api/designs";
-  const res = await fetch(url, {
-    method: currentId ? "PUT" : "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(readInputs()),
-  });
-  if (!res.ok) return showMsg(await errorText(res), true);
-  const saved = await res.json();
-  setEditing(saved.id, saved.name);
-  showMsg("Saved.", false);
-  await loadList();
-  await showSavedDrawing(saved.id);
-}
-
-async function showSavedDrawing(id) {
-  const res = await fetch(`/api/designs/${id}/drawing`);
-  if (res.ok) document.getElementById("drawing").innerHTML = await res.text();
+  const btn = $("saveBtn");
+  if (btn.disabled) return;
+  btn.disabled = true;
+  clearTimeout(drawTimer);
+  const wasNew = !state.id;
+  try {
+    const res = await fetch(state.id ? `/api/designs/${state.id}` : "/api/designs", {
+      method: state.id ? "PUT" : "POST",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(readInputs()),
+    });
+    if (!res.ok) {
+      clearErrors();
+      if (res.status === 404 && state.id) {
+        state.id = null; state.saved = null; updateStatus();
+        toast("This design was deleted. Save again to keep it as a new one.", "error");
+        await loadList();
+        return;
+      }
+      await showServerErrors(res);
+      return;
+    }
+    const saved = await res.json();
+    clearErrors();
+    state.id = saved.id;
+    state.saved = snapshot();
+    updateStatus();
+    toast(wasNew ? "Design saved" : "Changes saved");
+    await Promise.all([loadList(), showSaved(saved.id), updateResult()]);
+  } catch {
+    offline();
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 async function openDesign(id) {
-  const res = await fetch(`/api/designs/${id}`);
-  if (!res.ok) return showMsg(await errorText(res), true);
-  const d = await res.json();
-  document.getElementById("name").value = d.name;
-  document.getElementById("capacity_t").value = d.inputs.capacity_t;
-  document.getElementById("span_mm").value = d.inputs.span_mm;
-  document.getElementById("lifting_height_mm").value = d.inputs.lifting_height_mm;
-  setEditing(d.id, d.name);
-  showMsg("", false);
-  await showSavedDrawing(d.id);
-}
-
-async function deleteDesign(id) {
-  if (!confirm("Delete this design?")) return;
-  const res = await fetch(`/api/designs/${id}`, { method: "DELETE" });
-  if (!res.ok) return showMsg(await errorText(res), true);
-  if (currentId === id) newDesign();
-  await loadList();
-}
-
-function newDesign() {
-  document.getElementById("name").value = "New crane";
-  setEditing(null);
-  showMsg("", false);
-  document.getElementById("drawing").innerHTML = '<p class="empty">Click "Draw" to see the crane.</p>';
-}
-
-async function loadList() {
-  const list = document.getElementById("list");
-  const res = await fetch("/api/designs");
-  if (!res.ok) { list.innerHTML = '<li class="error">Could not load designs.</li>'; return; }
-  const designs = await res.json();
-  if (designs.length === 0) { list.innerHTML = '<li class="empty">No saved designs yet.</li>'; return; }
-  list.innerHTML = "";
-  for (const d of designs) {
-    const li = document.createElement("li");
-    const info = document.createElement("span");
-    info.textContent = d.name;
-    const sub = document.createElement("small");
-    sub.textContent = `${d.inputs.capacity_t} t · span ${d.inputs.span_mm} · lift ${d.inputs.lifting_height_mm}`;
-    info.appendChild(sub);
-    const btns = document.createElement("span");
-    const openBtn = document.createElement("button");
-    openBtn.className = "secondary"; openBtn.textContent = "Open";
-    openBtn.onclick = () => openDesign(d.id);
-    const delBtn = document.createElement("button");
-    delBtn.className = "danger"; delBtn.textContent = "Delete";
-    delBtn.onclick = () => deleteDesign(d.id);
-    btns.append(openBtn, " ", delBtn);
-    li.append(info, btns);
-    list.appendChild(li);
+  try {
+    const res = await fetch(`/api/designs/${id}`);
+    if (!res.ok) return showServerErrors(res);
+    const d = await res.json();
+    clearTimeout(drawTimer);
+    setForm(d.name, d.inputs);
+    state.id = d.id;
+    state.saved = snapshot();
+    state.zoom = null;
+    clearErrors();
+    updateStatus();
+    renderList();
+    await Promise.all([showSaved(d.id), updateResult()]);
+  } catch {
+    offline();
   }
 }
 
-setEditing(null);
-loadList();
+function newDesign() {
+  clearTimeout(drawTimer);
+  setForm(DEFAULTS.name, DEFAULTS.inputs);
+  state.id = null;
+  state.saved = null;
+  clearErrors();
+  updateStatus();
+  renderList();
+  setEmpty(true);
+  updateResult();
+  showPanel("design");
+  $("name").focus();
+  $("name").select();
+}
+
+function armDelete(btn, id) {
+  // First click asks, second click deletes.
+  if (btn.classList.contains("confirm")) return deleteDesign(id);
+  btn.classList.add("confirm");
+  btn.textContent = "Delete?";
+  setTimeout(() => {
+    if (btn.isConnected && btn.classList.contains("confirm")) {
+      btn.classList.remove("confirm");
+      btn.innerHTML = icon("trash");
+    }
+  }, 2500);
+}
+
+async function deleteDesign(id) {
+  try {
+    const res = await fetch(`/api/designs/${id}`, { method: "DELETE" });
+    if (!res.ok) return showServerErrors(res);
+    if (state.id === id) { state.id = null; state.saved = null; updateStatus(); }
+    toast("Design deleted");
+    await loadList();
+  } catch {
+    offline();
+  }
+}
+
+// ---------- saved list ----------
+function ago(iso) {
+  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto", style: "narrow" });
+  const s = (new Date(iso) - Date.now()) / 1000;
+  const units = [["year", 31536000], ["month", 2592000], ["week", 604800], ["day", 86400], ["hour", 3600], ["minute", 60]];
+  for (const [unit, sec] of units) if (Math.abs(s) >= sec) return rtf.format(Math.round(s / sec), unit);
+  return "just now";
+}
+
+function emptyState(ic, title, text) {
+  const li = el("li", "empty");
+  li.innerHTML = `<div class="empty-icon">${icon(ic)}</div>`;
+  li.append(el("div", "empty-title", title), el("div", "empty-text", text));
+  return li;
+}
+
+async function loadList() {
+  try {
+    const res = await fetch("/api/designs");
+    if (!res.ok) throw new Error(res.status);
+    designs = await res.json();
+    renderList();
+  } catch {
+    $("list").replaceChildren(emptyState("alert", "Could not load designs", "Check that the server is running."));
+  }
+}
+
+function renderList() {
+  const list = $("list");
+  const q = $("search").value.trim().toLowerCase();
+  const shown = designs.filter((d) => d.name.toLowerCase().includes(q));
+  $("navCount").textContent = designs.length;
+  $("navCount").hidden = designs.length === 0;
+  list.replaceChildren();
+  if (!designs.length) return list.append(emptyState("layers", "No saved designs yet", "Press Save to keep a design here."));
+  if (!shown.length) return list.append(emptyState("search", "No matches", "No design name contains that text."));
+  for (const d of shown) {
+    const li = el("li", "item" + (d.id === state.id ? " active" : ""));
+    li.tabIndex = 0;
+    li.title = `Open ${d.name}`;
+    li.onclick = () => openDesign(d.id);
+    li.onkeydown = (e) => { if (e.key === "Enter" && e.target === li) openDesign(d.id); };
+    const body = el("div", "item-body");
+    body.append(
+      el("div", "item-name", d.name),
+      el("div", "item-meta", `${fmt(d.inputs.span_mm)} span · ${ago(d.updated_at)}`),
+    );
+    const del = el("button", "icon-btn del");
+    del.type = "button";
+    del.title = "Delete";
+    del.setAttribute("aria-label", `Delete ${d.name}`);
+    del.innerHTML = icon("trash");
+    del.onclick = (e) => { e.stopPropagation(); armDelete(del, d.id); };
+    li.append(el("div", "thumb", `${fmt(d.inputs.capacity_t)}t`), body, del);
+    list.append(li);
+  }
+}
+
+// ---------- start ----------
+for (const f of FIELDS) {
+  $(f + "_range").addEventListener("input", (e) => { $(f).value = e.target.value; syncRange(f); onParamChange(); });
+  $(f).addEventListener("input", () => { syncRange(f); onParamChange(); });
+}
+$("name").addEventListener("input", () => { clearErrors(["name"]); updateStatus(); });
+$("panel-design").addEventListener("submit", (e) => { e.preventDefault(); save(); });
+$("saveBtn").addEventListener("click", (e) => { e.preventDefault(); save(); });
+$("newBtn").addEventListener("click", newDesign);
+$("emptyDrawBtn").addEventListener("click", redraw);
+$("search").addEventListener("input", renderList);
+$("zoomRange").addEventListener("input", (e) => zoomTo(e.target.value / 100));
+$("fitBtn").addEventListener("click", () => { state.zoom = null; applyZoom(); });
+$("fullBtn").addEventListener("click", toggleFullscreen);
+$("downloadBtn").addEventListener("click", downloadSvg);
+$("panelToggle").addEventListener("click", () => showPanel(state.panel, !state.panelOpen));
+document.querySelectorAll(".rail-item[data-panel]").forEach((b) => b.addEventListener("click", () => onRail(b.dataset.panel)));
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save(); }
+});
+
+const stored = loadStored();  // read before anything below overwrites it
+FIELDS.forEach(syncRange);
+showPanel("design", window.innerWidth > 760);  // on phones the panel would cover the drawing
+updateStatus();
+setupPan();
+setEmpty(true);
+restore(stored).finally(() => { updateResult(); loadList(); });
 </script>
 </body>
 </html>
