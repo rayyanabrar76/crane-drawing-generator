@@ -1,4 +1,4 @@
-# Crane Drawing Generator
+# CraneDraft – Crane Drawing Generator
 
 A small web app that makes a 2D drawing of a single girder overhead (EOT) crane from three inputs: load, span and lifting height. The drawing has a front view, a plan view and a technical data table, all with labelled dimensions. Designs can be saved, listed, opened, edited and deleted.
 
@@ -18,6 +18,8 @@ Then open:
 
 The database file `cranes.db` is created automatically on first start.
 
+If you change the code and the page does not update, stop the server (Ctrl+C) and start it again. On Windows the `--reload` option sometimes gets stuck.
+
 ## Stack and why
 
 - **Python + FastAPI** for the backend. Quick to build, and it checks inputs automatically with Pydantic and gives a free API docs page.
@@ -35,6 +37,7 @@ The database file `cranes.db` is created automatically on first start.
 | PUT | /api/designs/{id} | Edit a design |
 | DELETE | /api/designs/{id} | Delete a design |
 | POST | /api/preview | Draw from inputs without saving |
+| POST | /api/dimensions | All computed sizes from inputs, without saving |
 | GET | /api/designs/{id}/drawing | Drawing of a saved design (SVG) |
 | GET | /api/designs/{id}/dimensions | All computed sizes as numbers |
 
@@ -55,7 +58,7 @@ Bad inputs (out of range, missing, wrong type) return 422 with a message for eac
 - No structural checks (girder strength, deflection, wheel loads).
 - Only single girder cranes. No side view (section A-A).
 - No users or login. Everyone sees all designs.
-- No export to PDF or DXF. The SVG can be saved from the browser.
+- No export to PDF or DXF. The drawing can be downloaded as SVG with the SVG button.
 
 ## Time spent
 
