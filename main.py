@@ -6,7 +6,7 @@ import database
 import drawing
 from schemas import CraneInputs, DesignIn
 
-app = FastAPI(title="Crane Drawing Generator")
+app = FastAPI(title="CraneDraft API")
 
 
 @app.on_event("startup")
@@ -59,6 +59,12 @@ def delete_design(design_id: int):
 def preview(inputs: CraneInputs):
     """Draw from inputs without saving."""
     return _svg(drawing.render_svg(inputs.model_dump(), "Preview"))
+
+
+@app.post("/api/dimensions")
+def preview_dimensions(inputs: CraneInputs):
+    """All computed sizes (mm) from inputs, without saving."""
+    return drawing.compute_dimensions(inputs.model_dump())
 
 
 @app.get("/api/designs/{design_id}/drawing")
