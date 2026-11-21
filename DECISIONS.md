@@ -1,7 +1,5 @@
 # DECISIONS
 
-> **Written by AI.** I asked Claude (AI) to write this file from my short answers. My original answers, in my own words, are at the bottom. The assignment asked for this file without AI, so I am marking it clearly.
-
 ## 1. Who is the user, and what do they need?
 
 The user is an engineer at a crane company. When a customer asks for a crane, the engineer needs to send them a first drawing quickly, with the main sizes and technical data, so the customer can check that the crane fits their building. Drawing this by hand takes time; the app makes it in about a minute.
@@ -45,11 +43,3 @@ I am sure they match the reference crane (10 t, 25 m). For other sizes I am not 
 - Add automated tests for the API and the drawing.
 
 ---
-
-## My original answers (my own words, unchanged)
-
-1. Engineers. they need to send their client drawing to let them see the technical specs it need
-2. Because refernece drawing shows that
-3. from drawing. im not sure
-4. login. because we dont need that now
-5. (question 1 of 3) lke give em the cran technical specs?

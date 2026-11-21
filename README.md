@@ -59,7 +59,3 @@ Bad inputs (out of range, missing, wrong type) return 422 with a message for eac
 - Only single girder cranes. No side view (section A-A).
 - No users or login. Everyone sees all designs.
 - No export to PDF or DXF. The drawing can be downloaded as SVG with the SVG button.
-
-## Time spent
-
-2 hours
